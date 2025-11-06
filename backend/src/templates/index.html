@@ -1,0 +1,51 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Mini Chat App</title>
+    <style>
+        body { font-family: Arial; padding: 20px; }
+        #chat { border: 1px solid #ccc; padding: 10px; height: 300px; overflow-y: scroll; }
+        #user-input { width: 80%; }
+        #send-btn { width: 15%; }
+        .message { margin: 5px 0; }
+        .user { color: blue; }
+        .bot { color: green; }
+    </style>
+</head>
+<body>
+    <h2>Mini Chat App</h2>
+    <div id="chat"></div>
+    <input id="user-input" placeholder="Type a message..." />
+    <button id="send-btn">Send</button>
+
+    <script>
+        const chatDiv = document.getElementById("chat");
+        const input = document.getElementById("user-input");
+        const button = document.getElementById("send-btn");
+
+        function addMessage(text, sender) {
+            const msg = document.createElement("div");
+            msg.className = `message ${sender}`;
+            msg.textContent = text;
+            chatDiv.appendChild(msg);
+            chatDiv.scrollTop = chatDiv.scrollHeight;
+        }
+
+        button.addEventListener("click", async () => {
+            const text = input.value;
+            if (!text) return;
+
+            addMessage(text, "user");
+            input.value = "";
+
+            const res = await fetch("/send_message", {
+                method: "POST",
+                headers: { "Content-Type": "application/json" },
+                body: JSON.stringify({ text })
+            });
+            const data = await res.json();
+            addMessage(data.response, "bot");
+        });
+    </script>
+</body>
+</html>
