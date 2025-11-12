@@ -2,27 +2,66 @@
 <html>
 <head>
     <title>Mini Chat App</title>
-    <style>
-        body { font-family: Arial; padding: 20px; }
-        #chat { border: 1px solid #ccc; padding: 10px; height: 300px; overflow-y: scroll; }
-        #user-input { width: 80%; }
-        #send-btn { width: 15%; }
-        .message { margin: 5px 0; }
-        .user { color: blue; }
-        .bot { color: green; }
-    </style>
+    <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
 </head>
 <body>
     <h2>Mini Chat App</h2>
+
+    <!-- Popup -->
+    <div id="popup">
+        <div class="popup-content">
+            <h3>Set Up Character</h3>
+            <label for="char-name">Character Name:</label>
+            <input type="text" id="char-name" placeholder="e.g., Sherlock Holmes" />
+
+            <label for="char-desc">Description:</label>
+            <textarea id="char-desc" placeholder="Describe your character..."></textarea>
+
+            <button id="start-btn">Start Chat</button>
+        </div>
+    </div>
+
     <div id="chat"></div>
-    <input id="user-input" placeholder="Type a message..." />
-    <button id="send-btn">Send</button>
+    <input id="user-input" placeholder="Type a message..." disabled />
+    <button id="send-btn" disabled>Send</button>
 
     <script>
         const chatDiv = document.getElementById("chat");
         const input = document.getElementById("user-input");
         const button = document.getElementById("send-btn");
 
+        const popup = document.getElementById("popup");
+        const startBtn = document.getElementById("start-btn");
+        const charNameInput = document.getElementById("char-name");
+        const charDescInput = document.getElementById("char-desc");
+
+        let character = null;
+
+        // Handle popup setup
+        startBtn.addEventListener("click", async () => {
+            const name = charNameInput.value.trim();
+            const desc = charDescInput.value.trim();
+
+            if (!name || !desc) {
+                alert("Please enter both a name and description!");
+                return;
+            }
+
+            const res = await fetch("/set_character", {
+                method: "POST",
+                headers: { "Content-Type": "application/json" },
+                body: JSON.stringify({ name, description: desc })
+            });
+
+            const data = await res.json();
+            character = data.character;
+            popup.style.display = "none";
+            input.disabled = false;
+            button.disabled = false;
+            addMessage(`You are now chatting with ${character.name}!`, "bot");
+        });
+
+        // Add chat message
         function addMessage(text, sender) {
             const msg = document.createElement("div");
             msg.className = `message ${sender}`;
@@ -31,8 +70,9 @@
             chatDiv.scrollTop = chatDiv.scrollHeight;
         }
 
+        // Handle user input
         button.addEventListener("click", async () => {
-            const text = input.value;
+            const text = input.value.trim();
             if (!text) return;
 
             addMessage(text, "user");
@@ -43,6 +83,7 @@
                 headers: { "Content-Type": "application/json" },
                 body: JSON.stringify({ text })
             });
+
             const data = await res.json();
             addMessage(data.response, "bot");
         });
